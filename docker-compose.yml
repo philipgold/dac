@@ -1,0 +1,77 @@
+---
+version: '2'
+services:
+  kafka:
+    image: bitnami/kafka:3.5.1
+    hostname: kafka
+    environment:
+      KAFKA_CFG_NODE_ID: 0
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_KRAFT_CLUSTER_ID: abcdefghijklmnopqrstuv
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://docker-desktop:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    command: >
+      sh -c "
+      sleep 60s &&
+      /opt/bitnami/scripts/kafka/entrypoint.sh /opt/bitnami/scripts/kafka/run.sh
+      "
+    restart: always
+    ports:
+      - 9092:9092
+      - 9093:9093
+    container_name: kafka
+
+  kafka-ui:
+    container_name: kafka-ui-dp
+    hostname: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8088:8080
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      DYNAMIC_CONFIG_ENABLED: 'true'
+
+  # https://jupyter-docker-stacks.readthedocs.io/en/latest/index.html
+  jupyterw:
+    image: jupyter/pyspark-notebook:spark-3.5.0
+    container_name: jupyter_notebook
+    hostname: jupyter
+    #volumes:
+    #  - ../../../:/home/jovyan/datagen_runner
+    ports:
+      - 8888:8888
+      - 4040:4040
+      - 4041:4041
+      - 4042:4042
+    environment:
+      KAFKA_CONNECT_DATAGEN_URL: connect:8083
+      PYDEVD_DISABLE_FILE_VALIDATION: 1
+      KAFKA_URL: kafka:9092
+      KAFKA_CONNECT_MINIO_URL: connect:8083
+      MINIO_URL: minio:9000
+      AWS_ACCESS_KEY_ID: "minioadmin"
+      AWS_SECRET_ACCESS_KEY: "minioadmin"
+      PYSPARK_SUBMIT_ARGS: --packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.5.0,com.amazonaws:aws-java-sdk-pom:1.12.558,org.apache.hadoop:hadoop-aws:3.3.4,io.delta:delta-spark_2.12:3.0.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 pyspark-shell
+
+  minio:
+    hostname: minio
+    container_name: minio
+    image: quay.io/minio/minio:RELEASE.2023-09-20T22-49-55Z
+    command: server /data --console-address ":9001"
+    expose:
+      - "9000"
+      - "9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_API_ROOT_ACCESS: on
