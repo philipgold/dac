@@ -1,0 +1,37 @@
+# Tools useful for operating & debugging DataHub.
+---
+version: '3.8'
+services:
+  kafka-rest-proxy:
+    image: confluentinc/cp-kafka-rest:7.6.0
+    env_file: kafka-rest-proxy/env/docker.env
+    hostname: kafka-rest-proxy
+    ports:
+      - "8082:8082"
+    depends_on:
+      - zookeeper
+      - broker
+      - schema-registry
+
+  # https://github.com/provectus/kafka-ui/blob/master/documentation/compose/DOCKER_COMPOSE.md
+  kafka-ui:
+    env_file: kafka-topics-ui/env/docker.env
+    hostname: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8088:8080
+    depends_on:
+      - zookeeper
+      - broker
+      - schema-registry # -datahub-gms
+  #     - kafka-rest-proxy
+
+  # TODO: It doesn't work due to old version. Need to find workaround solution. 
+  # kibana:
+  #   image: kibana:7.13.1
+  #   env_file: kibana/env/docker.env
+  #   hostname: kibana
+  #   ports:
+  #     - "5601:5601"
+  #   depends_on:
+  #     - elasticsearch
