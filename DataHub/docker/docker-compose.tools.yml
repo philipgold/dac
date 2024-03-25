@@ -2,29 +2,29 @@
 ---
 version: '3.8'
 services:
-  kafka-rest-proxy:
-    image: confluentinc/cp-kafka-rest:7.6.0
-    env_file: kafka-rest-proxy/env/docker.env
-    hostname: kafka-rest-proxy
-    ports:
-      - "8082:8082"
-    depends_on:
-      - zookeeper
-      - broker
-      - schema-registry
+  # kafka-rest-proxy:
+  #   image: confluentinc/cp-kafka-rest:7.6.0
+  #   env_file: kafka-rest-proxy/env/docker.env
+  #   hostname: kafka-rest-proxy
+  #   ports:
+  #     - "8082:8082"
+  #   depends_on:
+  #     - zookeeper
+  #     - broker
+  #     - schema-registry
 
   # https://github.com/provectus/kafka-ui/blob/master/documentation/compose/DOCKER_COMPOSE.md
-  kafka-ui:
-    env_file: kafka-topics-ui/env/docker.env
-    hostname: kafka-ui
-    image: provectuslabs/kafka-ui:latest
-    ports:
-      - 8088:8080
-    depends_on:
-      - zookeeper
-      - broker
-      - schema-registry # -datahub-gms
-  #     - kafka-rest-proxy
+  # kafka-ui:
+  #   env_file: kafka-topics-ui/env/docker.env
+  #   hostname: kafka-ui
+  #   image: provectuslabs/kafka-ui:latest
+  #   ports:
+  #     - 8088:8080
+  #   depends_on:
+  #     - zookeeper
+  #     - broker
+  #     - schema-registry # -datahub-gms
+  ##     - kafka-rest-proxy
 
   # TODO: It doesn't work due to old version. Need to find workaround solution. 
   # kibana:
@@ -35,3 +35,35 @@ services:
   #     - "5601:5601"
   #   depends_on:
   #     - elasticsearch
+
+  # https://www.pgadmin.org/docs/pgadmin4/latest/container_deployment.html
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: pgadmin4_container
+  #   restart: always
+  #   ports:
+  #     - "8888:80"
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: user-name@domain-name.com
+  #     PGADMIN_DEFAULT_PASSWORD: strong-password
+  #   volumes:
+  #     - pgadmin-data:/var/lib/pgadmin
+  
+  minio:
+    hostname: minio
+    container_name: minio
+    image: quay.io/minio/minio:RELEASE.2023-09-20T22-49-55Z
+    command: server /data --console-address ":9001"
+    expose:
+      - "9000"
+      - "9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_API_ROOT_ACCESS: on
+
+volumes:
+  pgadmin-data:
